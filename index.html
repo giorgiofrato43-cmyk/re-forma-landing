@@ -1462,6 +1462,71 @@
   </footer>
 
   <script>
+    // === GOOGLE ANALYTICS EVENT TRACKING ===
+    function trackEvent(eventName, params) {
+      if (typeof gtag === 'function') {
+        gtag('event', eventName, params);
+      }
+    }
+
+    // Track CTA clicks
+    document.querySelectorAll('.nav__cta, .hero__cta').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        trackEvent('cta_click', {
+          event_category: 'engagement',
+          event_label: this.textContent.trim(),
+          link_url: this.href
+        });
+      });
+    });
+
+    // Track footer link clicks
+    document.querySelectorAll('.footer__links a').forEach(function(link) {
+      link.addEventListener('click', function() {
+        trackEvent('footer_link_click', {
+          event_category: 'engagement',
+          event_label: this.textContent.trim(),
+          link_url: this.href
+        });
+      });
+    });
+
+    // Track section views on scroll
+    var sectionTracked = {};
+    var sectionObserver = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !sectionTracked[entry.target.id]) {
+          sectionTracked[entry.target.id] = true;
+          trackEvent('section_view', {
+            event_category: 'scroll',
+            event_label: entry.target.id
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    ['hero', 'giorgio', 'method', 'transformations', 'experience', 'not-for-everyone', 'apply'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) sectionObserver.observe(el);
+    });
+
+    // Track scroll depth
+    var scrollDepths = [25, 50, 75, 100];
+    var scrollTracked = {};
+    window.addEventListener('scroll', function() {
+      var scrollPercent = Math.round((window.scrollY + window.innerHeight) / document.body.scrollHeight * 100);
+      scrollDepths.forEach(function(depth) {
+        if (scrollPercent >= depth && !scrollTracked[depth]) {
+          scrollTracked[depth] = true;
+          trackEvent('scroll_depth', {
+            event_category: 'scroll',
+            event_label: depth + '%',
+            value: depth
+          });
+        }
+      });
+    });
+
     // Nav scroll effect
     const nav = document.getElementById('nav');
     window.addEventListener('scroll', () => {
@@ -1487,6 +1552,11 @@
       btn.style.background = '#333';
       btn.style.color = '#8B7355';
       btn.disabled = true;
+      trackEvent('form_submit', {
+        event_category: 'conversion',
+        event_label: 'application_form',
+        goal: document.getElementById('goal').value
+      });
       // TODO: Connect to your form backend (Formspree, Netlify Forms, etc.)
       // For now, you can use: https://formspree.io or add action="https://formspree.io/f/YOUR_ID"
     });
@@ -1548,8 +1618,8 @@
         nextBtn.disabled = false;
       }
 
-      prevBtn.addEventListener('click', () => { goTo(current - 1); resetAutoplay(); });
-      nextBtn.addEventListener('click', () => { goTo(current + 1); resetAutoplay(); });
+      prevBtn.addEventListener('click', () => { goTo(current - 1); resetAutoplay(); trackEvent('carousel_interact', { event_category: 'engagement', event_label: 'prev' }); });
+      nextBtn.addEventListener('click', () => { goTo(current + 1); resetAutoplay(); trackEvent('carousel_interact', { event_category: 'engagement', event_label: 'next' }); });
 
       // Touch/swipe
       let startX = 0;
